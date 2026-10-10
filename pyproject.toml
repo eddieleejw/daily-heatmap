@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "Heatmap for habit tracking"
 requires-python = ">=3.12"
 
-dependencies = ["nicegui"]
+dependencies = ["nicegui", "uvicorn"]
 
 [dependency-groups]
 dev = ["pytest", "ruff", "mypy"]
