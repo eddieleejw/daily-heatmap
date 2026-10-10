@@ -1,0 +1,26 @@
+[build-system]
+requires = ["hatchling >= 1.26"]
+build-backend = "hatchling.build"
+
+[project]
+name = "heatmap"
+version = "0.1.0"
+description = "Heatmap for habit tracking"
+requires-python = ">=3.12"
+
+dependencies = ["nicegui"]
+
+[dependency-groups]
+dev = ["pytest", "ruff", "mypy"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.pytest]
+testpaths = [
+    "tests"
+]
+
+[tool.mypy]
+disable_error_code = ["import-untyped"]
