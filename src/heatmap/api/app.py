@@ -1,5 +1,6 @@
 from nicegui import ui
-import heatmap.api.gui 
+
+from heatmap.api.gui import make_year_grid
 
 
 @ui.page("/")
@@ -11,6 +12,14 @@ def main_page():
 @ui.page("/test")
 def test_page():
     ui.label('This is a test page')
+
+@ui.page("/prototype")
+def gui_heatmap():
+
+    make_year_grid(2024)
+    make_year_grid(2025)
+    make_year_grid(2026)
+
 
 
 

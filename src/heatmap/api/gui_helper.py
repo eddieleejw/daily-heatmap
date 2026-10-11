@@ -1,4 +1,6 @@
+import calendar
 from typing import List
+from nicegui import ui
 
 
 def process_weeks(weeks: List[int]) -> List[List[int]]:
@@ -51,3 +53,31 @@ def find_months(weeks: List[List[int]]) -> List[int]:
             months_labels.append(None)
     
     return months_labels
+
+
+def toggled_habit_cell(day):
+
+    selected = False
+
+    def toggle():
+        nonlocal selected
+
+        selected = not selected
+
+        cell.classes(
+            remove='bg-gray-200 bg-green-200',
+            add='bg-green-200' if selected else 'bg-gray-200',
+        )
+
+    cell = ui.card().classes(
+        'w-full h-full p-0 items-center justify-center '
+        'rounded bg-gray-200 text-green-950 '
+        'cursor-pointer'
+    ).props('flat')
+    
+    with cell:
+        ui.label(str(day)).classes('text-xs')
+
+    cell.on('click', toggle)
+
+

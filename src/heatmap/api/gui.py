@@ -1,12 +1,10 @@
 import calendar
 
 from nicegui import ui
-from heatmap.api.gui_helper import find_months, process_weeks
+from heatmap.api.gui_helper import find_months, process_weeks, toggled_habit_cell
 
-@ui.page("/prototype")
-def gui_heatmap():
 
-    year = 2026
+def make_year_grid(year):
     cal = calendar.Calendar(firstweekday=calendar.MONDAY)
     weeks = [item for month in range(1,13) for week in cal.monthdayscalendar(year, month) for item in week]
 
@@ -30,37 +28,4 @@ def gui_heatmap():
                 if day == 0:
                     ui.element('div')
                 else:
-                    ui.label(str(day)).classes(
-                        'flex items-center justify-center '
-                        'rounded bg-green-200 text-green-950 text-xs'
-                        )
-
-        # first_week = True
-        # weekday_counter = 0
-        # for day in weeks:
-
-        #     if weekday_counter == 0:
-        #         ui.element('div')
-        #         weekday_counter = 7
-
-        #     if day == 0 and first_week:
-        #         ui.element('div')
-        #     elif day == 0 and not first_week:
-        #         continue
-        #     else:
-        #         first_week = False
-        #         ui.label(str(day)).classes(
-        #             'flex items-center justify-center '
-        #             'rounded bg-green-200 text-green-950 text-xs'
-        #             )
-        #     weekday_counter -= 1
-                
-        
-
-
-if __name__ in {"__main__", "__mp_main__"}:
-    ui.run(
-        host = "0.0.0.0",
-        port = 8800,
-        show = False
-    )
+                    toggled_habit_cell(day)
