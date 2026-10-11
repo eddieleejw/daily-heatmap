@@ -1,11 +1,12 @@
 import calendar
 
 from nicegui import ui
+from sqlite3 import Row
 
-from heatmap.api.gui_helper import find_months, process_weeks, toggled_habit_cell
+from heatmap.api.gui_helper import find_months, process_weeks, toggled_habit_cell, db_colored_cell
 
 
-def make_year_grid(year):
+def make_year_grid(year, cell_behavior = None, args = None):
     cal = calendar.Calendar(firstweekday=calendar.MONDAY)
     weeks = [item for month in range(1,13) for week in cal.monthdayscalendar(year, month) for item in week]
 
@@ -20,6 +21,7 @@ def make_year_grid(year):
         for weekday in ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']:
             ui.label(weekday).classes('flex items-center text-sm')
 
+        cur_month = None
         for week, month in zip(weeks, months):
             if month == None:
                 ui.element('div')
@@ -29,4 +31,9 @@ def make_year_grid(year):
                 if day == 0:
                     ui.element('div')
                 else:
-                    toggled_habit_cell(day)
+                    if day == 1:
+                        cur_month = month
+                    # toggled_habit_cell(day)
+
+
+                    db_colored_cell(year, cur_month, day)

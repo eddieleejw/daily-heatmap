@@ -29,11 +29,14 @@ def add_to_db(db_path: Path, db_name: str, data: list[tuple[str, int]]) -> None:
 
     con.commit()
 
-def get_db_all(db_path: Path, db_name: str):
+def get_db_all(db_path: Path, db_name: str) -> list[sqlite3.Row]:
     '''
-    Select all rows from db
+    Select all rows from db and return as a list of sqlite3.Row objects
+
+    each row object can be used like a dictionary to access values (e.g. row['date'])
     '''
     con = create_db(db_path, db_name)
+    con.row_factory = sqlite3.Row
     cur = con.cursor()
 
     cur.execute(f"SELECT * FROM {db_name}")
@@ -53,10 +56,15 @@ def create_test_db(db_path: Path, db_name: str, start_date: date = date(2026,1,1
         ]
     )
 
+def get_db_all_as_dict(db_path: Path, db_name: str) -> dict[str, int | float]:
+    rows = get_db_all(db_path, db_name)
+
+    return {row['date']:row['value'] for row in rows for k,v in dict(row).items()}
+
 if __name__ == "__main__":
     db_path = Path("data/test.db")
     db_name = "completed_days"
 
     create_test_db(db_path, db_name)
 
-    print(get_db_all(db_path, db_name))
+    print(get_db_all_as_dict(db_path, db_name))

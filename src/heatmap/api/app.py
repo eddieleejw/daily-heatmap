@@ -1,6 +1,7 @@
 from nicegui import ui
 
 from heatmap.api.gui import make_year_grid
+from heatmap.data.database import get_db_all_as_dict
 
 
 @ui.page("/")
@@ -15,9 +16,10 @@ def test_page():
 
 @ui.page("/prototype")
 def gui_heatmap():
+    make_year_grid(2026)
 
-    make_year_grid(2024)
-    make_year_grid(2025)
+@ui.page("/prototype-toggle")
+def gui_toggle_heatmap():
     make_year_grid(2026)
 
 
