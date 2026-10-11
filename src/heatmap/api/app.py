@@ -1,10 +1,12 @@
 from nicegui import ui
+import heatmap.api.gui 
 
 
 @ui.page("/")
 def main_page():
     ui.label('This is the main page')
     ui.link("Go to secret page", "/test")
+    ui.link("Go to prototype", "/prototype")
 
 @ui.page("/test")
 def test_page():

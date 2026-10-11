@@ -8,6 +8,13 @@ Habit tracking heatmap
 uv sync --locked
 ```
 
+# Runnnig
+
+
+```
+uv run python src/heatmap/api/app.py
+```
+
 # Docker
 
 ```
