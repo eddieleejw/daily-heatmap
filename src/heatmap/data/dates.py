@@ -1,7 +1,7 @@
 from datetime import date, timedelta
-from typing import List
 
-def list_dates(start_date: date, end_date: date) -> List[date]:
+
+def list_dates(start_date: date, end_date: date) -> list[date]:
 
     delta = end_date - start_date
 

@@ -1,9 +1,9 @@
-import calendar
-from typing import List
+from typing import Any
+
 from nicegui import ui
 
 
-def process_weeks(weeks: List[int]) -> List[List[int]]:
+def process_weeks(weeks: list[int]) -> list[list[int]]:
     '''
     Takes a list of days and processes it to remove any non-leading 0s, and return it partitioned by weeks
 
@@ -28,7 +28,7 @@ def process_weeks(weeks: List[int]) -> List[List[int]]:
     return [[removed_zeros[i + 7*weeks] for i in range(7)] for weeks in range(len(removed_zeros)//7)]
 
 
-def find_months(weeks: List[List[int]]) -> List[int]:
+def find_months(weeks: list[list[int]]) -> list[Any]:
     '''
     Takes a processed weeks list (remove non-trailing zeros and in chunks of weeks) and returns a list denoting the column month labels
 

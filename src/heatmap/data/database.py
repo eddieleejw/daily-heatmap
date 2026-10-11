@@ -1,8 +1,9 @@
 import sqlite3
-from pathlib import Path
-from typing import List, Tuple
-from heatmap.data.dates import list_dates
 from datetime import date
+from pathlib import Path
+
+from heatmap.data.dates import list_dates
+
 
 def create_db(db_path: Path, db_name: str) -> sqlite3.Connection:
     con = sqlite3.connect(db_path)
@@ -17,7 +18,7 @@ def create_db(db_path: Path, db_name: str) -> sqlite3.Connection:
 
     return con
 
-def add_to_db(db_path: Path, db_name: str, data: List[Tuple[str, int]]) -> None:
+def add_to_db(db_path: Path, db_name: str, data: list[tuple[str, int]]) -> None:
     '''
     Commit some data to the database, updating data if primary key exists
     '''

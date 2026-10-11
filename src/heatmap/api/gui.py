@@ -1,6 +1,7 @@
 import calendar
 
 from nicegui import ui
+
 from heatmap.api.gui_helper import find_months, process_weeks, toggled_habit_cell
 
 
