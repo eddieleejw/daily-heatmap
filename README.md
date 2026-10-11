@@ -8,7 +8,7 @@ Habit tracking heatmap
 uv sync --locked
 ```
 
-# Runnnig
+# Running
 
 
 ```

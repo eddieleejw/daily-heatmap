@@ -1,7 +1,7 @@
 import calendar
 
 from nicegui import ui
-from heatmap.api.gui_helper import process_weeks
+from heatmap.api.gui_helper import find_months, process_weeks
 
 @ui.page("/prototype")
 def gui_heatmap():
@@ -11,6 +11,7 @@ def gui_heatmap():
     weeks = [item for month in range(1,13) for week in cal.monthdayscalendar(year, month) for item in week]
 
     weeks = process_weeks(weeks)
+    months = find_months(weeks)
 
 
     ui.label(f'{year}')
@@ -20,8 +21,12 @@ def gui_heatmap():
         for weekday in ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']:
             ui.label(weekday).classes('flex items-center text-sm')
 
-        for week in weeks:
-            for day in weeks:
+        for week, month in zip(weeks, months):
+            if month == None:
+                ui.element('div')
+            else:
+                ui.label(month)
+            for day in week:
                 if day == 0:
                     ui.element('div')
                 else:
