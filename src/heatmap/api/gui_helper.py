@@ -10,15 +10,13 @@ from heatmap.data.database import add_to_db, get_db_all_as_dict
 
 DEFAULT_CONFIG_PATH = Path("configs/config.yaml")
 
-def process_weeks(weeks: list[int]) -> list[list[int]]:
+def remove_intermediate_zeros(weeks: list[int]) -> list[int]:
     '''
-    Takes a list of days and processes it to remove any non-leading 0s, and return it partitioned by weeks
+    Takes a list of numbers and removed non-leading 0s
 
-    e.g. [0, 0, 0, 1, 2, 3, 4, 5, ..., 30, 31, 0, 0, 0, 1, 2, ...] -> [[0, 0, 0, 1, 2, 3, 4], [5, 6, ...], ..., [..., 30, 31, 1, ...], ...]
-
+    e.g. [0, 0, 1, 2, 0, 3, 4, 0] -> [0, 0, 1, 2, 3, 4]
     '''
     first_week = True
-
     removed_zeros = []
 
     for day in weeks:
@@ -30,9 +28,39 @@ def process_weeks(weeks: list[int]) -> list[list[int]]:
             first_week = False
             removed_zeros.append(day)
 
-    removed_zeros += [0 for _ in range((7 - (len(removed_zeros) % 7))%7)]
+    return removed_zeros
 
-    return [[removed_zeros[i + 7*weeks] for i in range(7)] for weeks in range(len(removed_zeros)//7)]
+def pad_zeros_to_multiple_of_seven(removed_zeros: list[int]):
+    '''
+    Pads '0's to an end of list of numbers to ensure it can be broken up into sub lists of size 7
+    '''
+    return removed_zeros + [0 for _ in range((7 - (len(removed_zeros) % 7))%7)]
+
+
+def split_into_seven(to_split: list[int]) -> list[list[int]]:
+    '''
+    Takes a list of size n (divisible by 7) and divides it into 7 sublists in sequential order
+
+    e.g. [1,2,3,4,5,6,7,8,9,10,11,12,13,14] -> [[1,2,3,4,5,6,7], [8,9,10,11,12,13,14]]
+    '''
+    assert len(to_split) % 7 == 0, "split_into_seven: input has incorrect size (not divisible by 7)"
+    
+    return [[to_split[i + 7*weeks] for i in range(7)] for weeks in range(len(to_split)//7)]
+
+
+
+def process_weeks(weeks: list[int]) -> list[list[int]]:
+    '''
+    Takes a list of days and processes it to remove any non-leading 0s, and return it partitioned by weeks
+
+    e.g. [0, 0, 0, 1, 2, 3, 4, 5, ..., 30, 31, 0, 0, 0, 1, 2, ...] -> [[0, 0, 0, 1, 2, 3, 4], [5, 6, ...], ..., [..., 30, 31, 1, ...], ...]
+
+    '''
+    removed_zeros = remove_intermediate_zeros(weeks)
+
+    padded_removed_zeros = pad_zeros_to_multiple_of_seven(removed_zeros)
+
+    return split_into_seven(padded_removed_zeros)
 
 
 def find_months(weeks: list[list[int]]) -> list[Any]:
