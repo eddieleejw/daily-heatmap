@@ -1,11 +1,12 @@
 from typing import Any
 from sqlite3 import Row
 from nicegui import ui
+from nicegui.elements.card import Card
 from pathlib import Path
 from datetime import datetime
 
 from heatmap.config import load_config
-from heatmap.data.database import get_db_all_as_dict
+from heatmap.data.database import add_to_db, get_db_all_as_dict
 
 DEFAULT_CONFIG_PATH = Path("configs/config.yaml")
 
@@ -89,7 +90,7 @@ def toggled_habit_cell(day):
 
 def db_colored_cell(year: int, month_str: str, day: int) -> None:
     '''
-    Takes a year (e.g. 2026) a month (e.g. Aug) a day (e.g. 20) and colors the cell according to the value in data
+    Takes a year (e.g. 2026) a month (e.g. Aug) a day (e.g. 20) and creates then colors the cell according to the value in data
     '''
     try:
         month = datetime.strptime(month_str, "%b").month
@@ -109,5 +110,32 @@ def db_colored_cell(year: int, month_str: str, day: int) -> None:
             ).props('flat')
     
     with cell:
-        ui.label(str(day)).classes('text-xs')
+        editor = ui.input(label = 'Input value:', placeholder = 0.0)
+        editor.on('keydown.enter', lambda: change_cell_value(cell, label, editor, datetime(year, month, day), editor.value))
+        label = ui.label(str(day)).classes('text-xs')
+        editor.set_visibility(False)
 
+    def on_click():
+        label.set_visibility(False)
+        editor.set_visibility(True)
+
+
+    label.on('click', on_click)
+
+def change_cell_value(cell, label: Card, editor: Card, date: datetime, value):
+    try:
+        if float(value) < 0.0 or float(value) > 1.0:
+            return
+    except:
+        return
+
+    value = float(value)
+
+    config = load_config(DEFAULT_CONFIG_PATH)
+    
+    add_to_db(config['database']['db_path'], config['database']['db_name'], [(date.strftime("%Y-%m-%d"), value)])
+
+    cell.style(f'background-color: hsl(120, 60%, {95 - value * 60}%);')
+
+    label.set_visibility(True)
+    editor.set_visibility(False)
