@@ -9,6 +9,7 @@ def main_page():
     ui.label('This is the main page')
     ui.link("Go to secret page", "/test")
     ui.link("Go to prototype", "/prototype")
+    ui.link("Go to prototype toggle", "/prototype-toggle")
 
 @ui.page("/test")
 def test_page():
