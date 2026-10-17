@@ -3,7 +3,7 @@ import calendar
 from nicegui import ui
 from sqlite3 import Row
 
-from heatmap.api.gui_helper import find_months, process_weeks, toggled_habit_cell, db_colored_cell
+from heatmap.api.gui_helper import find_months, process_weeks, toggled_habit_cell, db_colored_cell, load_habit_data
 
 
 def make_year_grid(year, cell_behavior = None, args = None):
@@ -35,5 +35,5 @@ def make_year_grid(year, cell_behavior = None, args = None):
                         cur_month = month
                     # toggled_habit_cell(day)
 
-
-                    db_colored_cell(year, cur_month, day)
+                    data = load_habit_data()
+                    db_colored_cell(year, cur_month, day, data)

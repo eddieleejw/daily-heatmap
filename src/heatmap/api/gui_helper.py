@@ -30,6 +30,7 @@ def remove_intermediate_zeros(weeks: list[int]) -> list[int]:
 
     return removed_zeros
 
+
 def pad_zeros_to_multiple_of_seven(removed_zeros: list[int]):
     '''
     Pads '0's to an end of list of numbers to ensure it can be broken up into sub lists of size 7
@@ -48,7 +49,6 @@ def split_into_seven(to_split: list[int]) -> list[list[int]]:
     return [[to_split[i + 7*weeks] for i in range(7)] for weeks in range(len(to_split)//7)]
 
 
-
 def process_weeks(weeks: list[int]) -> list[list[int]]:
     '''
     Takes a list of days and processes it to remove any non-leading 0s, and return it partitioned by weeks
@@ -63,36 +63,34 @@ def process_weeks(weeks: list[int]) -> list[list[int]]:
     return split_into_seven(padded_removed_zeros)
 
 
-def find_months(weeks: list[list[int]]) -> list[Any]:
+def find_months( weeks: list[list[int]], months: list[str] | None = None) -> list[str | None]:
     '''
     Takes a processed weeks list (remove non-trailing zeros and in chunks of weeks) and returns a list denoting the column month labels
 
     e.g. [Jan, None, None, None, Feb, None, ...]
     '''
 
-    months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-    i = 0
+    if months is None:
+        months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 
-    months_labels = []
+    month_names = iter(months)
+    return [next(month_names) if 1 in week else None for week in weeks]
 
-    for week in weeks:
-        new_month = False
-        for day in week:
-            if day == 1:
-                new_month = True
 
-        if new_month:
-            months_labels.append(months[i])
-            i += 1
-        else:
-            months_labels.append(None)
+def create_habit_cell(day):
+    cell = ui.card().classes(
+        'w-full h-full p-0 items-center justify-center '
+        'rounded bg-gray-200 text-green-950 '
+        'cursor-pointer'
+    ).props('flat')
     
-    return months_labels
+    with cell:
+        ui.label(str(day)).classes('text-xs')
+
+    return cell
 
 
 def toggled_habit_cell(day):
-
-    selected = False
 
     def toggle():
         nonlocal selected
@@ -104,66 +102,83 @@ def toggled_habit_cell(day):
             add='bg-green-200' if selected else 'bg-gray-200',
         )
 
-    cell = ui.card().classes(
-        'w-full h-full p-0 items-center justify-center '
-        'rounded bg-gray-200 text-green-950 '
-        'cursor-pointer'
-    ).props('flat')
-    
-    with cell:
-        ui.label(str(day)).classes('text-xs')
+    cell = create_habit_cell(day)
+    selected = False
 
     cell.on('click', toggle)
 
 
-def db_colored_cell(year: int, month_str: str, day: int) -> None:
-    '''
-    Takes a year (e.g. 2026) a month (e.g. Aug) a day (e.g. 20) and creates then colors the cell according to the value in data
-    '''
+def parse_cell_date(year: int, month_str: str, day: int):
     try:
         month = datetime.strptime(month_str, "%b").month
-    except ValueError:
-        raise ValueError(f"{month_str} is not an accepted month format")
+    except ValueError as e:
+        raise ValueError(f"{month_str} is not an accepted month format") from e
 
-    config = load_config(DEFAULT_CONFIG_PATH)
-    data = get_db_all_as_dict(config['database']['db_path'], config['database']['db_name'])
+    return datetime(year, month, day)
 
 
-    value = data.get(datetime(year, month, day).strftime("%Y-%m-%d"), 0)
-
-    cell = ui.card().classes(
+def create_colored_cell(value):
+    return ui.card().classes(
         'w-full h-full p-0 items-center justify-center cursor-pointer'
         ).style(
             f'background-color: hsl(120, 60%, {95 - value * 60}%);'
             ).props('flat')
-    
+
+
+def add_cell_editor(cell, cell_date: datetime):
     with cell:
-        editor = ui.input(label = 'Input value:', placeholder = 0.0)
-        editor.on('keydown.enter', lambda: change_cell_value(cell, label, editor, datetime(year, month, day), editor.value))
-        label = ui.label(str(day)).classes('text-xs')
+        editor = ui.input(label='Input value:', placeholder='0.0')
+        label = ui.label(str(cell_date.day)).classes('text-xs')
         editor.set_visibility(False)
 
-    def on_click():
+    def save_value():
+        change_cell_value(cell, label, editor, cell_date, editor.value)
+
+    def show_editor():
         label.set_visibility(False)
         editor.set_visibility(True)
 
+    editor.on('keydown.enter', save_value)
+    label.on('click', show_editor)
 
-    label.on('click', on_click)
 
-def change_cell_value(cell, label: Card, editor: Card, date: datetime, value):
-    try:
-        if float(value) < 0.0 or float(value) > 1.0:
-            return
-    except:
-        return
+def db_colored_cell(year: int, month_str: str, day: int, data: dict[str, float]) -> None:
+    cell_date = parse_cell_date(year, month_str, day)
+    value = data.get(cell_date.strftime('%Y-%m-%d'), 0)
+    cell = create_colored_cell(value)
+    add_cell_editor(cell, cell_date)
 
-    value = float(value)
 
+def load_habit_data() -> dict[str, float]:
     config = load_config(DEFAULT_CONFIG_PATH)
-    
+    database = config['database']
+    return get_db_all_as_dict(database['db_path'], database['db_name'])
+
+
+def parse_cell_value(value) -> float | None:
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+
+    return number if 0.0 <= number <= 1.0 else None
+
+
+def save_cell_value(date: datetime, value: float) -> None:
+    config = load_config(DEFAULT_CONFIG_PATH)
     add_to_db(config['database']['db_path'], config['database']['db_name'], [(date.strftime("%Y-%m-%d"), value)])
 
+
+def set_cell_green_color(cell, value: float) -> None:
     cell.style(f'background-color: hsl(120, 60%, {95 - value * 60}%);')
 
+
+def change_cell_value(cell, label, editor, date: datetime, value) -> None:
+    parsed_value = parse_cell_value(value)
+    if parsed_value is None:
+        return
+
+    save_cell_value(date, parsed_value)
+    set_cell_green_color(cell, parsed_value)
     label.set_visibility(True)
     editor.set_visibility(False)
