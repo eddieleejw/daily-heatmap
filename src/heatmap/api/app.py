@@ -1,6 +1,6 @@
 from nicegui import ui
 
-from heatmap.api.gui import make_year_grid
+from heatmap.api.gui import make_year_grid, make_scroll_grid
 
 
 @ui.page("/")
@@ -8,7 +8,7 @@ def main_page():
     ui.label('This is the main page')
     ui.link("Go to secret page", "/test")
     ui.link("Go to prototype", "/prototype")
-    ui.link("Go to prototype toggle", "/prototype-toggle")
+    ui.link("Go to prototype scroll", "/prototype-scroll")
 
 @ui.page("/test")
 def test_page():
@@ -20,7 +20,7 @@ def gui_heatmap():
 
 @ui.page("/prototype-scroll")
 def gui_scroll_heatmap():
-    make_year_grid(2026)
+    make_scroll_grid()
 
 
 

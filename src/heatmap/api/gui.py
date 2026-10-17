@@ -1,4 +1,5 @@
 import calendar
+from datetime import datetime
 
 from nicegui import ui
 
@@ -79,5 +80,42 @@ def make_year_grid(year: int):
     data = load_habit_data()
     draw_year_grid(year, months, weeks, data)
 
-def make_scroll_grid():
+
+
+    
+
+def date_dropdown_generic(title: str, options: list[int], selected_dates: list[int]):
+
+    def select_dates(option: int, selected_dates: list[int], title: str):
+        selected_dates[title] = option
+        ui.notify(f"{title} updated to {option}")
+
+    with ui.dropdown_button(title, auto_close=True):
+        for option in options:
+            ui.item(option, on_click=lambda option=option: select_dates(option, selected_dates, title))
+
+def get_date_from_dropdown(title: str):
+    selected_dates = dict()
+    ui.label(title)
+    date_dropdown_generic(title="Year", options=[2024 + i for i in range(3)], selected_dates=selected_dates)
+    date_dropdown_generic(title="Month", options=[i for i in range(1,13)], selected_dates=selected_dates)
+    date_dropdown_generic(title="Day", options=[i for i in range(1,32)], selected_dates=selected_dates) # TODO: available options should change depending on month chosen
+
+    return selected_dates
+
+def draw_date_confined_grid(start_date, end_date):
     pass
+    
+
+def get_start_end_dates_dropdown():
+    start_dates = get_date_from_dropdown("Start date")
+    end_dates = get_date_from_dropdown("End date")
+
+    return start_dates, end_dates
+
+def make_scroll_grid():
+    start_dates, end_dates = get_start_end_dates_dropdown()
+    data = load_habit_data()
+    draw_date_confined_grid(start_dates, end_dates)
+
+    ui.button('Click me!', on_click=lambda: ui.label(f"{start_dates}, {end_dates}"))
