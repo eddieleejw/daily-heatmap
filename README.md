@@ -30,12 +30,12 @@ docker run --rm -p 8000:8800 heatmap
 
 High priority:
 
--[] Logging
--[X] Automatically store/read user habit heat map data
--[] Scroll through months
--[X] Some way for user to input (click on a cell and input value)
+- [ ] Logging
+- [x] Automatically store/read user habit heat map data
+- [ ] Scroll through months
+- [x] Some way for user to input (click on a cell and input value)
 
 Low priority:
-[] Color changing
-[] Light/dark mode
 
+- [ ] Color changing
+- [ ] Light/dark mode
