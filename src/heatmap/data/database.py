@@ -18,7 +18,7 @@ def create_db(db_path: Path, db_name: str) -> sqlite3.Connection:
 
     return con
 
-def add_to_db(db_path: Path, db_name: str, data: list[tuple[str, int]]) -> None:
+def add_to_db(db_path: Path, db_name: str, data: list[tuple[str, float]]) -> None:
     '''
     Commit some data to the database, updating data if primary key exists
     '''

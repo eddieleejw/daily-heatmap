@@ -1,9 +1,7 @@
-from typing import Any
-from sqlite3 import Row
-from nicegui import ui
-from nicegui.elements.card import Card
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
+
+from nicegui import ui
 
 from heatmap.config import load_config
 from heatmap.data.database import add_to_db, get_db_all_as_dict
