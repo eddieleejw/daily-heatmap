@@ -83,18 +83,18 @@ def make_year_grid(year: int):
 
     
 
-def date_dropdown_generic(title: str, options: list[int], selected_dates: list[int]):
+def date_dropdown_generic(title: str, options: list[int], selected_dates: dict[str, int]):
 
-    def select_dates(option: int, selected_dates: list[int], title: str):
+    def select_dates(option: int, selected_dates: dict[str, int], title: str):
         selected_dates[title] = option
         ui.notify(f"{title} updated to {option}")
 
     with ui.dropdown_button(title, auto_close=True):
         for option in options:
-            ui.item(option, on_click=lambda option=option: select_dates(option, selected_dates, title))
+            ui.item(str(option), on_click=lambda option=option: select_dates(option, selected_dates, title))
 
 def get_date_from_dropdown(title: str):
-    selected_dates = {}
+    selected_dates: dict[str, int] = {}
     ui.label(title)
     date_dropdown_generic(title="Year", options=[2024 + i for i in range(3)], selected_dates=selected_dates)
     date_dropdown_generic(title="Month", options=[i for i in range(1,13)], selected_dates=selected_dates)
