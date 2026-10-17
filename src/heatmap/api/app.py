@@ -1,6 +1,6 @@
 from nicegui import ui
 
-from heatmap.api.gui import make_year_grid, make_scroll_grid
+from heatmap.api.gui import make_scroll_grid, make_year_grid
 
 
 @ui.page("/")
