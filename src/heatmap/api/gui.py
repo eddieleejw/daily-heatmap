@@ -1,4 +1,5 @@
 import calendar
+from datetime import date, timedelta
 
 from nicegui import ui
 
@@ -33,7 +34,7 @@ def make_weekday_column_labels():
         ui.label(weekday).classes('flex items-center text-sm')  
 
 
-def add_week_column(year: int, month: str | None, cur_month: str | None, week: list[int], data: dict[str, float]) -> str | None:
+def add_week_column(year: int, month: str | None, cur_month: str | None, week: list[int], data: dict[str, float], new_year: int | None) -> str | None:
     '''
     Creates a length 8 column
 
@@ -52,9 +53,10 @@ def add_week_column(year: int, month: str | None, cur_month: str | None, week: l
         else:
             if day == 1:
                 cur_month = month
-
+                if cur_month == "Jan" and new_year is not None:
+                    year = new_year
             if cur_month is None:
-                raise ValueError('A month must be known before rendering a day.')
+                raise ValueError(f'A month must be known before rendering a day. cur_month = {cur_month}')
             
             db_colored_cell(year, cur_month, day, data)
 
@@ -71,7 +73,7 @@ def draw_year_grid(year: int, months: list[str | None], weeks: list[list[int]], 
 
         cur_month = None
         for week, month in zip(weeks, months):       
-            cur_month = add_week_column(year, month, cur_month, week, data)
+            cur_month = add_week_column(year, month, cur_month, week, data, new_year = None)
 
 
 def make_year_grid(year: int):
@@ -88,6 +90,7 @@ def date_dropdown_generic(title: str, options: list[int], selected_dates: dict[s
     def select_dates(option: int, selected_dates: dict[str, int], title: str):
         selected_dates[title] = option
         ui.notify(f"{title} updated to {option}")
+        # TODO: cause redrawing the grid here
 
     with ui.dropdown_button(title, auto_close=True):
         for option in options:
@@ -106,14 +109,53 @@ def get_date_from_dropdown(title: str):
 def get_number_of_columns_in_grid():
     return 53 # TODO: delete default values
 
-def get_weeks_and_months_from_start_end_date():
-    # TODO: delete default values
-    return [[1,2,3,4,5,6,7], [8,9,10,11,12,13,14], [15,16,17,1,2,3,4]], ["Jan", None, "Feb"]
+def get_weeks_and_months_from_start_end_date(start_date: dict[str, int], end_date: dict[str, int]) -> tuple[list[list[int]], list[str | None], list[int | None]]:
+    '''
+    Find the partitioned weeks and months given the start and end date
+
+    Args
+        start_date/end_date (dict[str, int]): a dictionary like {"Year": 2025, "Month": 10, "Day": 2}
+    
+    Returns
+        list[list[int]]: the partitioned weeks. each sublist must have length 7. allow 0s only if leading first sublist or trailing last sublist
+        list[str | None]: the months. value is the month if the corresponding week contains the first of a new month, else None
+        list[int | None]: the years. same as month but for years
+    '''
+
+    start = date(start_date["Year"], start_date["Month"], start_date["Day"])
+    end = date(end_date["Year"], end_date["Month"], end_date["Day"])
+
+    if start > end:
+        raise ValueError("Start date must not be after end date.")
+
+    weeks: list[list[int]] = []
+    months: list[str | None] = []
+    years: list[int | None] = []
+
+    for offset in range((end - start).days + 1):
+        current = start + timedelta(days=offset)
+        weekday = current.weekday()
+
+        if not weeks or weekday == 0:
+            weeks.append([0] * 7)
+            months.append(None)
+            years.append(None)
+
+        weeks[-1][weekday] = current.day
+
+        if current.day == 1:
+            months[-1] = calendar.month_abbr[current.month]
+            if current.month == 1:
+                years[-1] = current.year
+
+    return weeks, months, years
+
+
 
 def draw_date_confined_grid(start_date, end_date, data):
     # TODO: delete default values
-    start_date = {"Year": 2024, "Month": 2, "Day": 4}
-    end_date = {"Year": 2026, "Month": 5, "Day": 28}
+    start_date = {"Year": 2023, "Month": 3, "Day": 4}
+    end_date = {"Year": 2024, "Month": 1, "Day": 28}
 
     columns_count = get_number_of_columns_in_grid()
 
@@ -121,22 +163,23 @@ def draw_date_confined_grid(start_date, end_date, data):
     with ui.grid(rows="repeat(9, 32px)", columns=f"60px repeat({columns_count}, 32px)").style('grid-auto-flow: column; gap: 6px'):
         ui.element('div')
         make_weekday_column_labels()
-        for year in range(start_date["Year"], end_date["Year"]+1):
-            weeks, months = get_weeks_and_months_from_start_end_date()
-            cur_month = None
-            new_year = True
-            for week, month in zip(weeks, months):
-                if new_year:
-                    ui.label(f"{start_date["Year"]}")  
-                    new_year = False
-                else:
-                    ui.element('div')
-                cur_month = add_week_column(year, month, cur_month, week, data)
+        weeks, months, years = get_weeks_and_months_from_start_end_date(start_date, end_date)
+        cur_month = calendar.month_abbr[start_date["Month"]]
+        cur_year = start_date["Year"]
+
+        for week, month, year in zip(weeks, months, years):
+            if year is not None:
+                ui.label(year)
+            else:
+                ui.element('div')
+
+            cur_month = add_week_column(cur_year, month, cur_month, week, data, year)
+
 
 
     
 
-def get_start_end_dates_dropdown():
+def get_start_end_dates_dropdown() -> tuple[dict[str, int], dict[str, int]]:
     start_dates = get_date_from_dropdown("Start date")
     end_dates = get_date_from_dropdown("End date")
 
