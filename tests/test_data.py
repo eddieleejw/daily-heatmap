@@ -61,3 +61,32 @@ def test_configuration_save_and_load(tmp_path, monkeypatch):
 
     assert db_path.is_file()
     assert result == {"2026-10-18": 0.75}
+
+
+def test_load_data_for_selected_habit(tmp_path):
+    '''
+    Checks habit data value loading
+    '''
+    db_path = tmp_path / "habits.db"
+    table_name = "completed_days"
+
+    add_to_db(
+        db_path,
+        table_name,
+        [("2026-10-18", 0.25)],
+        habit_id="reading",
+    )
+    add_to_db(
+        db_path,
+        table_name,
+        [("2026-10-18", 0.75)],
+        habit_id="exercise",
+    )
+
+    assert get_db_all_as_dict(
+        db_path, table_name, habit_id="reading"
+    ) == {"2026-10-18": 0.25}
+
+    assert get_db_all_as_dict(
+        db_path, table_name, habit_id="exercise"
+    ) == {"2026-10-18": 0.75}

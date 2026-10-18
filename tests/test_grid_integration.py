@@ -1,4 +1,6 @@
 from datetime import date, timedelta
+from unittest.mock import Mock
+
 
 import pytest
 import yaml
@@ -109,3 +111,4 @@ async def test_default_date_range_on_load(user: User, monkeypatch):
         for offset in range(181)
     ]
     assert rendered_dates == expected_dates
+

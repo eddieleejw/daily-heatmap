@@ -4,6 +4,8 @@ from pathlib import Path
 
 from heatmap.data.dates import list_dates
 
+EMPTY_HABIT_ID = "EMPTY"
+
 
 def create_db(db_path: Path, db_name: str) -> sqlite3.Connection:
     con = sqlite3.connect(db_path)
@@ -11,21 +13,23 @@ def create_db(db_path: Path, db_name: str) -> sqlite3.Connection:
 
     cur.execute(f"""
         CREATE TABLE IF NOT EXISTS {db_name}(
-        date TEXT PRIMARY KEY,
-        value REAL NOT NULL
+        date TEXT NOT NULL,
+        value REAL NOT NULL,
+        habit_id TEXT NOT NULL,
+        PRIMARY KEY (date, habit_id)
         )
     """)
 
     return con
 
-def add_to_db(db_path: Path, db_name: str, data: list[tuple[str, float]]) -> None:
+def add_to_db(db_path: Path, db_name: str, data: list[tuple[str, float]], habit_id: str = EMPTY_HABIT_ID) -> None:
     '''
     Commit some data to the database, updating data if primary key exists
     '''
     con = create_db(db_path, db_name)
     cur = con.cursor()
 
-    cur.executemany(f"INSERT INTO {db_name} VALUES (?, ?) ON CONFLICT(date) DO UPDATE SET value = excluded.value", data)
+    cur.executemany(f"INSERT INTO {db_name} VALUES (?, ?, ?) ON CONFLICT(date, habit_id) DO UPDATE SET value = excluded.value", [(d[0], d[1], habit_id) for d in data])
 
     con.commit()
 
@@ -56,8 +60,14 @@ def create_test_db(db_path: Path, db_name: str, start_date: date = date(2026,1,1
         ]
     )
 
-def get_db_all_as_dict(db_path: Path, db_name: str) -> dict[str, int | float]:
-    rows = get_db_all(db_path, db_name)
+def get_db_all_as_dict(db_path: Path, db_name: str, habit_id:str = EMPTY_HABIT_ID) -> dict[str, int | float]:
+    con = create_db(db_path, db_name)
+    con.row_factory = sqlite3.Row
+    cur = con.cursor()
+
+    cur.execute(f"SELECT * FROM {db_name} WHERE habit_id = ?", (habit_id,))
+
+    rows = cur.fetchall()
 
     return {row['date']:row['value'] for row in rows for k,v in dict(row).items()}
 

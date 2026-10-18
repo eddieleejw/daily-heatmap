@@ -32,7 +32,9 @@ High priority:
 
 - [ ] Logging
 - [ ] Save changes button (don't commit changes until button is pressed)
-- [ ] Default date range (today - 6 months)
+- [ ] Insert grid button (create new empty grid)
+- [ ] Dropdown menu to select what habit the grid represents
+- [x] Default date range (today - 6 months)
 - [x] Automatically store/read user habit heat map data
 - [x] Select start and end date
 - [x] Some way for user to input (click on a cell and input value)
