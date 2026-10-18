@@ -69,3 +69,43 @@ async def test_render_and_edit_across_new_year(user: User, tmp_path, monkeypatch
     assert gui_helper.load_habit_data() == {
         "2026-01-08": 0.75,
     }
+
+
+@pytest.mark.asyncio
+async def test_default_date_range_on_load(user: User, monkeypatch):
+    '''
+    Verify the initial grid includes today minus 180 days through today.
+    '''
+    today = date.today()
+
+    class FixedDate(date):
+        @classmethod
+        def today(cls):
+            return today
+
+    monkeypatch.setattr(gui, "date", FixedDate)
+    monkeypatch.setattr(gui, "load_habit_data", dict)
+
+    rendered_dates = []
+    original_db_colored_cell = gui.db_colored_cell
+
+    def track_cell(year, month, day, data):
+        rendered_dates.append(
+            gui_helper.parse_cell_date(year, month, day).date()
+        )
+        original_db_colored_cell(year, month, day, data)
+
+    monkeypatch.setattr(gui, "db_colored_cell", track_cell)
+
+    @ui.page("/default-dates-test")
+    def test_page():
+        gui.make_scroll_grid()
+
+    await user.open("/default-dates-test")
+
+    start = today - timedelta(days=180)
+    expected_dates = [
+        start + timedelta(days=offset)
+        for offset in range(181)
+    ]
+    assert rendered_dates == expected_dates

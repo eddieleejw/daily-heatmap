@@ -197,8 +197,9 @@ def date_input_to_dict(date_in: ui.date_input) -> dict[str, int]:
     return dates
 
 def get_start_end_dates_calendar() -> tuple[ui.date_input, ui.date_input]:
-    start_dates = ui.date_input("Start date")
-    end_dates = ui.date_input("End date")
+    with ui.row():
+        start_dates = ui.date_input("Start date", value=(date.today() - timedelta(days=180)).isoformat())
+        end_dates = ui.date_input("End date", value=date.today().isoformat())
 
     return start_dates, end_dates
 
@@ -210,7 +211,7 @@ def make_scroll_grid():
     data = load_habit_data()
     grid_container = ui.column()
 
-    def click_draw_grid(start_dates, end_dates, data):
+    def click_draw_grid(start_dates: ui.date_input, end_dates: ui.date_input, data: dict[str, float]):
         grid_container.clear()
 
         with grid_container:
@@ -218,5 +219,10 @@ def make_scroll_grid():
                 draw_date_confined_grid(date_input_to_dict(start_dates), date_input_to_dict(end_dates), data)
             except ValueError as e:
                 print(f"Error: {e}")
+
+    click_draw_grid(start_dates, end_dates, data)
+
+    start_dates.on_value_change(lambda e: click_draw_grid(e, end_dates, data))
+    end_dates.on_value_change(lambda e: click_draw_grid(start_dates, e, data))
 
     ui.button('Draw grid', on_click=lambda: click_draw_grid(start_dates, end_dates, data))
