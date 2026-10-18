@@ -90,7 +90,6 @@ def date_dropdown_generic(title: str, options: list[int], selected_dates: dict[s
     def select_dates(option: int, selected_dates: dict[str, int], title: str):
         selected_dates[title] = option
         ui.notify(f"{title} updated to {option}")
-        # TODO: cause redrawing the grid here
 
     with ui.dropdown_button(title, auto_close=True):
         for option in options:
@@ -99,15 +98,25 @@ def date_dropdown_generic(title: str, options: list[int], selected_dates: dict[s
 def get_date_from_dropdown(title: str):
     selected_dates: dict[str, int] = {}
     ui.label(title)
-    date_dropdown_generic(title="Year", options=[2024 + i for i in range(3)], selected_dates=selected_dates)
-    date_dropdown_generic(title="Month", options=[i for i in range(1,13)], selected_dates=selected_dates)
-    date_dropdown_generic(title="Day", options=[i for i in range(1,32)], selected_dates=selected_dates) # TODO: available options should change depending on month chosen
+    with ui.row():
+        date_dropdown_generic(title="Year", options=[2024 + i for i in range(3)], selected_dates=selected_dates)
+        date_dropdown_generic(title="Month", options=[i for i in range(1,13)], selected_dates=selected_dates)
+        date_dropdown_generic(title="Day", options=[i for i in range(1,32)], selected_dates=selected_dates) # TODO: available options should change depending on month chosen
 
     return selected_dates
 
 
-def get_number_of_columns_in_grid():
-    return 53 # TODO: delete default values
+def get_number_of_columns_in_grid(start_date: dict[str, int], end_date: dict[str, int]) -> int:
+    '''
+    Given start and end date dictionary, find the number of columns needed (i.e number of weeks)
+    '''
+    start = date(start_date["Year"], start_date["Month"], start_date["Day"])
+    end = date(end_date["Year"], end_date["Month"], end_date["Day"])
+
+    if start > end:
+        raise ValueError("Start date must not be after end date.")
+
+    return (start.weekday() + (end - start).days) // 7 + 1
 
 def get_weeks_and_months_from_start_end_date(start_date: dict[str, int], end_date: dict[str, int]) -> tuple[list[list[int]], list[str | None], list[int | None]]:
     '''
@@ -152,13 +161,8 @@ def get_weeks_and_months_from_start_end_date(start_date: dict[str, int], end_dat
 
 
 
-def draw_date_confined_grid(start_date, end_date, data):
-    # TODO: delete default values
-    start_date = {"Year": 2023, "Month": 3, "Day": 4}
-    end_date = {"Year": 2024, "Month": 1, "Day": 28}
-
-    columns_count = get_number_of_columns_in_grid()
-
+def draw_date_confined_grid(start_date: dict[str, int], end_date: dict[str, int], data: dict[str, float]):
+    columns_count = get_number_of_columns_in_grid(start_date, end_date)
 
     with ui.grid(rows="repeat(9, 32px)", columns=f"60px repeat({columns_count}, 32px)").style('grid-auto-flow: column; gap: 6px'):
         ui.element('div')
@@ -175,19 +179,44 @@ def draw_date_confined_grid(start_date, end_date, data):
 
             cur_month = add_week_column(cur_year, month, cur_month, week, data, year)
 
-
-
     
-
 def get_start_end_dates_dropdown() -> tuple[dict[str, int], dict[str, int]]:
     start_dates = get_date_from_dropdown("Start date")
     end_dates = get_date_from_dropdown("End date")
 
     return start_dates, end_dates
 
-def make_scroll_grid():
-    start_dates, end_dates = get_start_end_dates_dropdown()
-    data = load_habit_data()
-    draw_date_confined_grid(start_dates, end_dates, data)
 
-    ui.button('Click me!', on_click=lambda: ui.label(f"{start_dates}, {end_dates}"))
+def date_input_to_dict(date_in: ui.date_input) -> dict[str, int]:
+    selected = date.fromisoformat(date_in.value)
+    dates = {
+        "Year": selected.year,
+        "Month": selected.month,
+        "Day": selected.day,
+    }
+    return dates
+
+def get_start_end_dates_calendar() -> tuple[ui.date_input, ui.date_input]:
+    start_dates = ui.date_input("Start date")
+    end_dates = ui.date_input("End date")
+
+    return start_dates, end_dates
+
+def make_scroll_grid():
+    # start_dates, end_dates = get_start_end_dates_dropdown()
+
+    start_dates, end_dates = get_start_end_dates_calendar()
+
+    data = load_habit_data()
+    grid_container = ui.column()
+
+    def click_draw_grid(start_dates, end_dates, data):
+        grid_container.clear()
+
+        with grid_container:
+            try:
+                draw_date_confined_grid(date_input_to_dict(start_dates), date_input_to_dict(end_dates), data)
+            except Exception as e:
+                print(f"Error: {e}")
+
+    ui.button('Draw grid', on_click=lambda: click_draw_grid(start_dates, end_dates, data))
