@@ -1,0 +1,71 @@
+from datetime import date, timedelta
+
+import pytest
+import yaml
+from nicegui import ui
+from nicegui.testing import User
+
+from heatmap.api import gui, gui_helper
+
+
+@pytest.mark.asyncio
+async def test_render_and_edit_across_new_year(user: User, tmp_path, monkeypatch):
+    '''
+    Verify grid dates across New Year and that editing a January cell saves to the correct date.
+    '''
+    config_path = tmp_path / "config.yaml"
+    config_path.write_text(
+        yaml.safe_dump({
+            "database": {
+                "db_path": str(tmp_path / "habits.db"),
+                "db_name": "completed_days",
+            },
+        }),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(gui_helper, "DEFAULT_CONFIG_PATH", config_path)
+
+    start = date(2025, 12, 29)
+    end = date(2026, 1, 11)
+    rendered_dates = []
+    original_add_cell_editor = gui_helper.add_cell_editor
+
+    def track_cell_editor(cell, cell_date):
+        rendered_dates.append(cell_date.date())
+        original_add_cell_editor(cell, cell_date)
+
+        editor, label = cell.default_slot.children
+        key = cell_date.strftime("%Y-%m-%d")
+        editor.mark(f"editor-{key}")
+        label.mark(f"day-{key}")
+
+    monkeypatch.setattr(
+        gui_helper, "add_cell_editor", track_cell_editor
+    )
+
+    @ui.page("/new-year-test")
+    def test_page():
+        gui.draw_date_confined_grid(
+            {"Year": start.year, "Month": start.month, "Day": start.day},
+            {"Year": end.year, "Month": end.month, "Day": end.day},
+            gui_helper.load_habit_data(),
+        )
+
+    await user.open("/new-year-test")
+
+    expected_dates = [
+        start + timedelta(days=offset)
+        for offset in range((end - start).days + 1)
+    ]
+    assert rendered_dates == expected_dates
+
+    # January 8 is in a column after the New Year transition.
+    user.find(marker="day-2026-01-08").click()
+    user.find(marker="editor-2026-01-08").type("0.75").trigger(
+        "keydown.enter"
+    )
+
+    await user.should_see(marker="day-2026-01-08")
+    assert gui_helper.load_habit_data() == {
+        "2026-01-08": 0.75,
+    }

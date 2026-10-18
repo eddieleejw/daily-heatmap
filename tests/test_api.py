@@ -1,5 +1,7 @@
 import pytest
-from heatmap.api.gui import get_weeks_and_months_from_start_end_date, get_number_of_columns_in_grid
+
+from heatmap.api.gui import get_number_of_columns_in_grid, get_weeks_and_months_from_start_end_date
+
 
 @pytest.mark.parametrize(
         ("start", "end", "expected_weeks", "expected_months", "expected_years"),

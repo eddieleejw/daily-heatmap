@@ -11,7 +11,7 @@ requires-python = ">=3.12"
 dependencies = ["nicegui", "uvicorn"]
 
 [dependency-groups]
-dev = ["pytest", "ruff", "mypy"]
+dev = ["pytest", "ruff", "mypy", "pytest-asyncio"]
 
 [tool.ruff]
 line-length = 100
@@ -21,6 +21,8 @@ target-version = "py312"
 testpaths = [
     "tests"
 ]
+asyncio_mode = "auto"
+main_file = "src/heatmap/api/app.py"
 
 [tool.mypy]
 disable_error_code = ["import-untyped"]

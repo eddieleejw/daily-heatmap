@@ -34,7 +34,7 @@ def make_weekday_column_labels():
         ui.label(weekday).classes('flex items-center text-sm')  
 
 
-def add_week_column(year: int, month: str | None, cur_month: str | None, week: list[int], data: dict[str, float], new_year: int | None) -> str | None:
+def add_week_column(year: int, month: str | None, cur_month: str | None, week: list[int], data: dict[str, float], new_year: int | None) -> tuple[str | None, int]:
     '''
     Creates a length 8 column
 
@@ -60,7 +60,7 @@ def add_week_column(year: int, month: str | None, cur_month: str | None, week: l
             
             db_colored_cell(year, cur_month, day, data)
 
-    return cur_month
+    return cur_month, year
 
 
 def draw_year_grid(year: int, months: list[str | None], weeks: list[list[int]], data: dict[str, float]):
@@ -73,7 +73,7 @@ def draw_year_grid(year: int, months: list[str | None], weeks: list[list[int]], 
 
         cur_month = None
         for week, month in zip(weeks, months):       
-            cur_month = add_week_column(year, month, cur_month, week, data, new_year = None)
+            cur_month, _ = add_week_column(year, month, cur_month, week, data, new_year = None)
 
 
 def make_year_grid(year: int):
@@ -168,16 +168,16 @@ def draw_date_confined_grid(start_date: dict[str, int], end_date: dict[str, int]
         ui.element('div')
         make_weekday_column_labels()
         weeks, months, years = get_weeks_and_months_from_start_end_date(start_date, end_date)
-        cur_month = calendar.month_abbr[start_date["Month"]]
+        cur_month: str | None = calendar.month_abbr[start_date["Month"]]
         cur_year = start_date["Year"]
 
         for week, month, year in zip(weeks, months, years):
             if year is not None:
-                ui.label(year)
+                ui.label(str(year))
             else:
                 ui.element('div')
 
-            cur_month = add_week_column(cur_year, month, cur_month, week, data, year)
+            cur_month, cur_year = add_week_column(cur_year, month, cur_month, week, data, year)
 
     
 def get_start_end_dates_dropdown() -> tuple[dict[str, int], dict[str, int]]:
@@ -216,7 +216,7 @@ def make_scroll_grid():
         with grid_container:
             try:
                 draw_date_confined_grid(date_input_to_dict(start_dates), date_input_to_dict(end_dates), data)
-            except Exception as e:
+            except ValueError as e:
                 print(f"Error: {e}")
 
     ui.button('Draw grid', on_click=lambda: click_draw_grid(start_dates, end_dates, data))
