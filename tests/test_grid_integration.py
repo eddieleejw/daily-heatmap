@@ -1,7 +1,6 @@
 from datetime import date, timedelta
 from unittest.mock import Mock
 
-
 import pytest
 import yaml
 from nicegui import ui
@@ -32,9 +31,9 @@ async def test_render_and_edit_across_new_year(user: User, tmp_path, monkeypatch
     rendered_dates = []
     original_add_cell_editor = gui_helper.add_cell_editor
 
-    def track_cell_editor(cell, cell_date):
+    def track_cell_editor(cell, cell_date, habit=gui_helper.EMPTY_HABIT_ID):
         rendered_dates.append(cell_date.date())
-        original_add_cell_editor(cell, cell_date)
+        original_add_cell_editor(cell, cell_date, habit)
 
         editor, label = cell.default_slot.children
         key = cell_date.strftime("%Y-%m-%d")
@@ -91,11 +90,11 @@ async def test_default_date_range_on_load(user: User, monkeypatch):
     rendered_dates = []
     original_db_colored_cell = gui.db_colored_cell
 
-    def track_cell(year, month, day, data):
+    def track_cell(year, month, day, data, habit=gui_helper.EMPTY_HABIT_ID):
         rendered_dates.append(
             gui_helper.parse_cell_date(year, month, day).date()
         )
-        original_db_colored_cell(year, month, day, data)
+        original_db_colored_cell(year, month, day, data, habit)
 
     monkeypatch.setattr(gui, "db_colored_cell", track_cell)
 
@@ -135,3 +134,67 @@ async def test_selecting_habit_loads_its_data(user: User, monkeypatch):
     user.find("exercise").click()
 
     load_data.assert_called_once_with(habit_id="exercise")
+
+@pytest.mark.asyncio
+async def test_selected_habit_data_and_edits(user: User, tmp_path, monkeypatch):
+    '''
+    Test the following:
+
+    1. Switching habits displays correct values
+    2. Inputting new value changes only that habit
+    3. Changing start date doesnt change values
+    '''
+    from heatmap.data.database import add_to_db, get_db_all_as_dict
+
+    # Set up temp config and database with data for two habits
+    db_path = tmp_path / "habits.db"
+    config_path = tmp_path / "config.yaml"
+    config_path.write_text(yaml.safe_dump({
+        "database": {"db_path": str(db_path), "db_name": "completed_days"},
+    }))
+    monkeypatch.setattr(gui_helper, "DEFAULT_CONFIG_PATH", config_path)
+    today = date.today().isoformat()
+    add_to_db(db_path, "completed_days", [(today, 0.25)], habit_id="reading")
+    add_to_db(db_path, "completed_days", [(today, 0.75)], habit_id="exercise")
+
+    original_editor = gui_helper.add_cell_editor
+    cells = {}
+
+    def track_editor(cell, cell_date, habit):
+        # Marks the cell corresponding to today's date for testing
+        original_editor(cell, cell_date, habit)
+        if cell_date.date().isoformat() == today:
+            cells[habit] = cell
+            editor, label = cell.default_slot.children
+            editor.mark("today-editor")
+            label.mark("today-label")
+
+    monkeypatch.setattr(gui_helper, "add_cell_editor", track_editor)
+
+    @ui.page("/habit-data-test")
+    def test_page():
+        gui.make_scroll_grid(habits=["reading", "exercise"])
+
+    # Test switching habits loads and displays habits correctly
+    await user.open("/habit-data-test")
+    assert cells["reading"]._style["background-color"] == "hsl(120, 60%, 80.0%)"
+    user.find(marker="habit-selector").click()
+    user.find("exercise").click()
+    assert cells["exercise"]._style["background-color"] == "hsl(120, 60%, 50.0%)"
+
+    # Test that inputting new value changes only that habit's value in the database
+    user.find(marker="today-label").click()
+    user.find(marker="today-editor").type("0.5").trigger("keydown.enter")
+    assert get_db_all_as_dict(db_path, "completed_days", "exercise") == {today: 0.5}
+    assert get_db_all_as_dict(db_path, "completed_days", "reading") == {today: 0.25}
+
+    # Check changing start date displays correct saved values
+    start_input = next(element for element in user.find(ui.date_input).elements if element.label == "Start date")
+    start_input.set_value((date.today() - timedelta(days=7)).isoformat())
+    assert cells["exercise"]._style["background-color"] == "hsl(120, 60%, 65.0%)"
+    user.find(marker="habit-selector").click()
+    user.find("reading").click()
+    assert cells["reading"]._style["background-color"] == "hsl(120, 60%, 80.0%)"
+    user.find(marker="habit-selector").click()
+    user.find("exercise").click()
+    assert cells["exercise"]._style["background-color"] == "hsl(120, 60%, 65.0%)"

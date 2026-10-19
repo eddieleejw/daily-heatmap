@@ -9,6 +9,7 @@ from heatmap.api.gui_helper import (
     load_habit_data,
     process_weeks,
 )
+from heatmap.data.database import EMPTY_HABIT_ID
 
 
 def get_weeks_and_months_from_year(year:int) -> tuple[list[list[int]], list[str | None]]:
@@ -34,7 +35,7 @@ def make_weekday_column_labels():
         ui.label(weekday).classes('flex items-center text-sm')  
 
 
-def add_week_column(year: int, month: str | None, cur_month: str | None, week: list[int], data: dict[str, float], new_year: int | None, habit: str) -> tuple[str | None, int]:
+def add_week_column(year: int, month: str | None, cur_month: str | None, week: list[int], data: dict[str, float], new_year: int | None, habit: str = EMPTY_HABIT_ID) -> tuple[str | None, int]:
     '''
     Creates a length 8 column
 
@@ -161,7 +162,7 @@ def get_weeks_and_months_from_start_end_date(start_date: dict[str, int], end_dat
 
 
 
-def draw_date_confined_grid(start_date: dict[str, int], end_date: dict[str, int], data: dict[str, float], habit: str):
+def draw_date_confined_grid(start_date: dict[str, int], end_date: dict[str, int], data: dict[str, float], habit: str = EMPTY_HABIT_ID):
     columns_count = get_number_of_columns_in_grid(start_date, end_date)
 
     with ui.grid(rows="repeat(9, 32px)", columns=f"60px repeat({columns_count}, 32px)").style('grid-auto-flow: column; gap: 6px'):
@@ -203,8 +204,11 @@ def get_start_end_dates_calendar() -> tuple[ui.date_input, ui.date_input]:
 
     return start_dates, end_dates
 
-def make_scroll_grid(habits: list[str]):
-    # start_dates, end_dates = get_start_end_dates_dropdown()
+def make_scroll_grid(habits: list[str] | None = None):
+    if habits is None:
+        habits = [EMPTY_HABIT_ID]
+    if not habits:
+        raise ValueError("At least one habit is required.")
 
     start_dates, end_dates = get_start_end_dates_calendar()
 
@@ -215,20 +219,20 @@ def make_scroll_grid(habits: list[str]):
         selected_habit = e.value
         click_draw_grid(start_dates, end_dates, selected_habit)
 
-    ui.select(habits, value=selected_habit, with_input=True, on_change=lambda e: select_habit(e))
+    ui.select(habits, value=selected_habit, with_input=True, on_change=select_habit).mark("habit-selector")
     grid_container = ui.column() 
 
-    def click_draw_grid(start_dates: ui.date_input, end_dates: ui.date_input, habit: str):
+    def click_draw_grid(start_dates: ui.date_input, end_dates: ui.date_input, habit: str = EMPTY_HABIT_ID):
 
         grid_container.clear()
 
         with grid_container:
             try:
-                draw_date_confined_grid(date_input_to_dict(start_dates), date_input_to_dict(end_dates), load_habit_data(habit_id = habit), habit) # TODO: have to make the database persist for the given habit
+                draw_date_confined_grid(date_input_to_dict(start_dates), date_input_to_dict(end_dates), load_habit_data(habit_id = habit), habit)
             except ValueError as e:
                 print(f"Error: {e}")
 
     click_draw_grid(start_dates, end_dates, selected_habit)
 
-    start_dates.on_value_change(lambda e: click_draw_grid(e, end_dates, selected_habit))
-    end_dates.on_value_change(lambda e: click_draw_grid(start_dates, e, selected_habit))
+    start_dates.on_value_change(lambda: click_draw_grid(start_dates, end_dates, selected_habit))
+    end_dates.on_value_change(lambda: click_draw_grid(start_dates, end_dates, selected_habit))
