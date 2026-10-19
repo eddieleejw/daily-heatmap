@@ -20,7 +20,7 @@ def gui_heatmap():
 
 @ui.page("/prototype-scroll")
 def gui_scroll_heatmap():
-    make_scroll_grid()
+    make_scroll_grid(habits = ["Meditation", "Exercise"])
 
 
 

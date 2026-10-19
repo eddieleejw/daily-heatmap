@@ -112,3 +112,26 @@ async def test_default_date_range_on_load(user: User, monkeypatch):
     ]
     assert rendered_dates == expected_dates
 
+    
+@pytest.mark.asyncio
+async def test_selecting_habit_loads_its_data(user: User, monkeypatch):
+    '''
+    Selecting a habit requests that habit data
+    '''
+
+    load_data = Mock()
+    load_data.return_value = {} # load_data() returns {}
+    monkeypatch.setattr(gui, "load_habit_data", load_data)
+
+    @ui.page("/habit-selection-test")
+    def test_page():
+        gui.make_scroll_grid(habits=["reading", "exercise"])
+
+    await user.open("/habit-selection-test")
+
+    load_data.reset_mock()
+
+    user.find(marker="habit-selector").click()
+    user.find("exercise").click()
+
+    load_data.assert_called_once_with(habit_id="exercise")
