@@ -115,22 +115,22 @@ def parse_cell_date(year: int, month_str: str, day: int):
     return datetime(year, month, day)
 
 
-def create_colored_cell(value):
+def create_colored_cell(value, dark: bool = False):
     return ui.card().classes(
         'w-full h-full p-0 items-center justify-center cursor-pointer'
         ).style(
-            f'background-color: hsl(120, 60%, {95 - value * 60}%);'
+            f'background-color: {cell_color(value, dark)};'
             ).props('flat')
 
 
-def add_cell_editor(cell, cell_date: datetime, habit: str = EMPTY_HABIT_ID):
+def add_cell_editor(cell, cell_date: datetime, habit: str = EMPTY_HABIT_ID, *, dark: bool = False):
     with cell:
         editor = ui.input(label='Input value:', placeholder='0.0')
         label = ui.label(str(cell_date.day)).classes('text-xs')
         editor.set_visibility(False)
 
     def save_value():
-        change_cell_value(cell, label, editor, cell_date, editor.value, habit)
+        change_cell_value(cell, label, editor, cell_date, editor.value, habit, dark=dark)
 
     def show_editor():
         label.set_visibility(False)
@@ -140,11 +140,11 @@ def add_cell_editor(cell, cell_date: datetime, habit: str = EMPTY_HABIT_ID):
     label.on('click', show_editor)
 
 
-def db_colored_cell(year: int, month_str: str, day: int, data: dict[str, float], habit: str = EMPTY_HABIT_ID) -> None:
+def db_colored_cell(year: int, month_str: str, day: int, data: dict[str, float], habit: str = EMPTY_HABIT_ID, *, dark: bool = False) -> None:
     cell_date = parse_cell_date(year, month_str, day)
     value = data.get(cell_date.strftime('%Y-%m-%d'), 0)
-    cell = create_colored_cell(value)
-    add_cell_editor(cell, cell_date, habit)
+    cell = create_colored_cell(value, dark)
+    add_cell_editor(cell, cell_date, habit, dark=dark)
 
 
 def load_habit_data(habit_id: str = EMPTY_HABIT_ID) -> dict[str, float]:
@@ -167,17 +167,17 @@ def save_cell_value(date: datetime, value: float, habit: str = EMPTY_HABIT_ID) -
     add_to_db(config['database']['db_path'], config['database']['db_name'], [(date.strftime("%Y-%m-%d"), value)], habit_id = habit)
 
 
-def set_cell_green_color(cell, value: float) -> None:
-    cell.style(f'background-color: hsl(120, 60%, {95 - value * 60}%);')
+def set_cell_green_color(cell, value: float, *, dark: bool = False) -> None:
+    cell.style(f'background-color: {cell_color(value, dark)};')
 
 
-def change_cell_value(cell, label, editor, date: datetime, value, habit: str = EMPTY_HABIT_ID) -> None:
+def change_cell_value(cell, label, editor, date: datetime, value, habit: str = EMPTY_HABIT_ID, *, dark: bool = False) -> None:
     parsed_value = parse_cell_value(value)
     if parsed_value is None:
         return
 
     save_cell_value(date, parsed_value, habit)
-    set_cell_green_color(cell, parsed_value)
+    set_cell_green_color(cell, parsed_value, dark=dark)
     label.set_visibility(True)
     editor.set_visibility(False)
 
@@ -189,3 +189,13 @@ def load_habits() -> list[str]:
 def add_habit(name: str) -> bool:
     database = load_config(DEFAULT_CONFIG_PATH)['database']
     return create_habit(database['db_path'], database['db_name'], name)
+
+
+def cell_color(value: float, dark: bool) -> str:
+    '''
+    Sets cell color between white/black and green depending on dark mode
+    '''
+    if dark:
+        return f'hsl(120, {value * 60}%, {15 + value * 20}%)'
+
+    return f'hsl(120, 60%, {95 - value * 60}%)'

@@ -38,11 +38,11 @@ def habit_page(habit_db):
     '''
     @ui.page('/add-habit-test')
     def initial_page():
-        gui.make_scroll_grid(habits=['reading'])
+        gui.make_scroll_grid(habits=['reading'], dark=False)
 
     @ui.page('/reload-added-habit-test')
     def fresh_page():
-        gui.make_scroll_grid()
+        gui.make_scroll_grid(dark=False)
 
     return '/add-habit-test'
 
@@ -55,8 +55,8 @@ def rendered_cells(monkeypatch):
     cells = {}
     original_editor = gui_helper.add_cell_editor
 
-    def track_editor(cell, cell_date, habit=gui_helper.EMPTY_HABIT_ID):
-        original_editor(cell, cell_date, habit)
+    def track_editor(cell, cell_date, habit=gui_helper.EMPTY_HABIT_ID, *, dark=False):
+        original_editor(cell, cell_date, habit, dark=dark)
         cells[cell_date.date().isoformat()] = cell
         if cell_date.date() == date.today():
             editor, label = cell.default_slot.children

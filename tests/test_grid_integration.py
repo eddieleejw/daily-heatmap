@@ -31,9 +31,9 @@ async def test_render_and_edit_across_new_year(user: User, tmp_path, monkeypatch
     rendered_dates = []
     original_add_cell_editor = gui_helper.add_cell_editor
 
-    def track_cell_editor(cell, cell_date, habit=gui_helper.EMPTY_HABIT_ID):
+    def track_cell_editor(cell, cell_date, habit=gui_helper.EMPTY_HABIT_ID, *, dark=False):
         rendered_dates.append(cell_date.date())
-        original_add_cell_editor(cell, cell_date, habit)
+        original_add_cell_editor(cell, cell_date, habit, dark=dark)
 
         editor, label = cell.default_slot.children
         key = cell_date.strftime("%Y-%m-%d")
@@ -91,17 +91,17 @@ async def test_default_date_range_on_load(user: User, monkeypatch):
     rendered_dates = []
     original_db_colored_cell = gui.db_colored_cell
 
-    def track_cell(year, month, day, data, habit=gui_helper.EMPTY_HABIT_ID):
+    def track_cell(year, month, day, data, habit=gui_helper.EMPTY_HABIT_ID, *, dark=False):
         rendered_dates.append(
             gui_helper.parse_cell_date(year, month, day).date()
         )
-        original_db_colored_cell(year, month, day, data, habit)
+        original_db_colored_cell(year, month, day, data, habit, dark=dark)
 
     monkeypatch.setattr(gui, "db_colored_cell", track_cell)
 
     @ui.page("/default-dates-test")
     def test_page():
-        gui.make_scroll_grid()
+        gui.make_scroll_grid(dark=False)
 
     await user.open("/default-dates-test")
 
@@ -125,7 +125,7 @@ async def test_selecting_habit_loads_its_data(user: User, monkeypatch):
 
     @ui.page("/habit-selection-test")
     def test_page():
-        gui.make_scroll_grid(habits=["reading", "exercise"])
+        gui.make_scroll_grid(habits=["reading", "exercise"], dark=False)
 
     await user.open("/habit-selection-test")
 
@@ -161,9 +161,9 @@ async def test_selected_habit_data_and_edits(user: User, tmp_path, monkeypatch):
     original_editor = gui_helper.add_cell_editor
     cells = {}
 
-    def track_editor(cell, cell_date, habit):
+    def track_editor(cell, cell_date, habit, *, dark=False):
         # Marks the cell corresponding to today's date for testing
-        original_editor(cell, cell_date, habit)
+        original_editor(cell, cell_date, habit, dark=dark)
         if cell_date.date().isoformat() == today:
             cells[habit] = cell
             editor, label = cell.default_slot.children
@@ -174,7 +174,7 @@ async def test_selected_habit_data_and_edits(user: User, tmp_path, monkeypatch):
 
     @ui.page("/habit-data-test")
     def test_page():
-        gui.make_scroll_grid(habits=["reading", "exercise"])
+        gui.make_scroll_grid(habits=["reading", "exercise"], dark=False)
 
     # Test switching habits loads and displays habits correctly
     await user.open("/habit-data-test")

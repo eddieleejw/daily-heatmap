@@ -37,7 +37,7 @@ def make_weekday_column_labels():
         ui.label(weekday).classes('flex items-center text-sm')  
 
 
-def add_week_column(year: int, month: str | None, cur_month: str | None, week: list[int], data: dict[str, float], new_year: int | None, habit: str = EMPTY_HABIT_ID) -> tuple[str | None, int]:
+def add_week_column(year: int, month: str | None, cur_month: str | None, week: list[int], data: dict[str, float], new_year: int | None, habit: str = EMPTY_HABIT_ID, *, dark: bool = False) -> tuple[str | None, int]:
     '''
     Creates a length 8 column
 
@@ -61,12 +61,12 @@ def add_week_column(year: int, month: str | None, cur_month: str | None, week: l
             if cur_month is None:
                 raise ValueError(f'A month must be known before rendering a day. cur_month = {cur_month}')
             
-            db_colored_cell(year, cur_month, day, data, habit)
+            db_colored_cell(year, cur_month, day, data, habit, dark=dark)
 
     return cur_month, year
 
 
-def draw_year_grid(year: int, months: list[str | None], weeks: list[list[int]], data: dict[str, float]):
+def draw_year_grid(year: int, months: list[str | None], weeks: list[list[int]], data: dict[str, float], *, dark: bool = False):
     if len(months) != len(weeks):
         raise ValueError(f"Length of months ({len(months)}) and weeks ({len(weeks)}) must match")
     
@@ -76,13 +76,13 @@ def draw_year_grid(year: int, months: list[str | None], weeks: list[list[int]], 
 
         cur_month = None
         for week, month in zip(weeks, months):       
-            cur_month, _ = add_week_column(year, month, cur_month, week, data, new_year = None)
+            cur_month, _ = add_week_column(year, month, cur_month, week, data, new_year = None, dark=dark)
 
 
-def make_year_grid(year: int):
+def make_year_grid(year: int, *, dark: bool = False):
     weeks, months = get_weeks_and_months_from_year(year)
     data = load_habit_data()
-    draw_year_grid(year, months, weeks, data)
+    draw_year_grid(year, months, weeks, data, dark=dark)
 
 
 
@@ -164,7 +164,7 @@ def get_weeks_and_months_from_start_end_date(start_date: dict[str, int], end_dat
 
 
 
-def draw_date_confined_grid(start_date: dict[str, int], end_date: dict[str, int], data: dict[str, float], habit: str = EMPTY_HABIT_ID):
+def draw_date_confined_grid(start_date: dict[str, int], end_date: dict[str, int], data: dict[str, float], habit: str = EMPTY_HABIT_ID, *, dark: bool = False):
     columns_count = get_number_of_columns_in_grid(start_date, end_date)
 
     with ui.grid(rows="repeat(9, 32px)", columns=f"60px repeat({columns_count}, 32px)").style('grid-auto-flow: column; gap: 6px'):
@@ -180,7 +180,7 @@ def draw_date_confined_grid(start_date: dict[str, int], end_date: dict[str, int]
             else:
                 ui.element('div')
 
-            cur_month, cur_year = add_week_column(cur_year, month, cur_month, week, data, year, habit)
+            cur_month, cur_year = add_week_column(cur_year, month, cur_month, week, data, year, habit, dark=dark)
 
     
 def get_start_end_dates_dropdown() -> tuple[dict[str, int], dict[str, int]]:
@@ -206,13 +206,17 @@ def get_start_end_dates_calendar() -> tuple[ui.date_input, ui.date_input]:
 
     return start_dates, end_dates
 
-def make_scroll_grid(habits: list[str] | None = None):
+def make_scroll_grid(habits: list[str] | None = None, *, dark: bool = True):
     if habits is None:
         habits = load_habits() or [EMPTY_HABIT_ID]
     if not habits:
         raise ValueError("At least one habit is required.")
 
+    dark_mode = ui.dark_mode(value=dark)
+
     with ui.expansion('', value=True).classes('w-full'):
+        ui.switch('Dark mode').bind_value(dark_mode)
+        
         start_dates, end_dates = get_start_end_dates_calendar()
 
         selected_habit = habits[0]
@@ -256,7 +260,7 @@ def make_scroll_grid(habits: list[str] | None = None):
 
         with grid_container:
             try:
-                draw_date_confined_grid(date_input_to_dict(start_dates), date_input_to_dict(end_dates), load_habit_data(habit_id = habit), habit)
+                draw_date_confined_grid(date_input_to_dict(start_dates), date_input_to_dict(end_dates), load_habit_data(habit_id = habit), habit, dark=bool(dark_mode.value))
             except ValueError as e:
                 print(f"Error: {e}")
 
@@ -264,3 +268,4 @@ def make_scroll_grid(habits: list[str] | None = None):
 
     start_dates.on_value_change(lambda: click_draw_grid(start_dates, end_dates, selected_habit))
     end_dates.on_value_change(lambda: click_draw_grid(start_dates, end_dates, selected_habit))
+    dark_mode.on_value_change(lambda: click_draw_grid(start_dates, end_dates, selected_habit))
