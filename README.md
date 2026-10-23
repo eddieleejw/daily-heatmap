@@ -30,7 +30,7 @@ docker run --rm -p 8000:8800 heatmap
 
 
 
-- [ ] Add new habit option
+- [x] Add new habit option
 - [ ] "Zen mode" option
 - [ ] Dark mode option
 - [ ] Color gets gradually darker the longer the streak

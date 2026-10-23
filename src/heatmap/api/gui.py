@@ -212,41 +212,42 @@ def make_scroll_grid(habits: list[str] | None = None):
     if not habits:
         raise ValueError("At least one habit is required.")
 
-    start_dates, end_dates = get_start_end_dates_calendar()
+    with ui.expansion('', value=True).classes('w-full'):
+        start_dates, end_dates = get_start_end_dates_calendar()
 
-    selected_habit = habits[0]
+        selected_habit = habits[0]
 
-    def select_habit(e):
-        nonlocal selected_habit
-        selected_habit = e.value
-        click_draw_grid(start_dates, end_dates, selected_habit)
+        def select_habit(e):
+            nonlocal selected_habit
+            selected_habit = e.value
+            click_draw_grid(start_dates, end_dates, selected_habit)
 
-    def submit_habit():
-        name = (name_input.value or '').strip()
-        if not name:
-            ui.notify('Enter a habit name.')
-            return
-        if name in habit_selector.options or not add_habit(name):
-            ui.notify('That habit already exists.')
-            return
-        habit_selector.set_options([*habit_selector.options, name])
-        habit_selector.set_value(name)
-        dialog.close()
-        name_input.set_value('')
+        def submit_habit():
+            name = (name_input.value or '').strip()
+            if not name:
+                ui.notify('Enter a habit name.')
+                return
+            if name in habit_selector.options or not add_habit(name):
+                ui.notify('That habit already exists.')
+                return
+            habit_selector.set_options([*habit_selector.options, name])
+            habit_selector.set_value(name)
+            dialog.close()
+            name_input.set_value('')
 
-    def open_habit_dialog():
-        name_input.set_value('')
-        dialog.open()
+        def open_habit_dialog():
+            name_input.set_value('')
+            dialog.open()
 
-    with ui.dialog() as dialog, ui.card():
-        name_input = ui.input('Habit name').mark('new-habit-name')
-        name_input.on('keydown.enter', submit_habit)
+        with ui.dialog() as dialog, ui.card():
+            name_input = ui.input('Habit name').mark('new-habit-name')
+            name_input.on('keydown.enter', submit_habit)
 
-    with ui.row().classes('items-center'):
-        habit_selector = ui.select(
-            list(habits), value=selected_habit, with_input=True, on_change=select_habit,
-        ).mark('habit-selector')
-        ui.button('Add new habit', on_click=open_habit_dialog)
+        with ui.row().classes('items-center'):
+            habit_selector = ui.select(
+                list(habits), value=selected_habit, with_input=True, on_change=select_habit,
+            ).mark('habit-selector')
+            ui.button('Add new habit', on_click=open_habit_dialog)
     grid_container = ui.column() 
 
     def click_draw_grid(start_dates: ui.date_input, end_dates: ui.date_input, habit: str = EMPTY_HABIT_ID):
