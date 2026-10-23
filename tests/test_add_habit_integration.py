@@ -147,3 +147,31 @@ async def test_duplicate_habit_preserves_options_and_existing_data(
 
     await user.open('/reload-added-habit-test')
     assert list(habit_selector(user).options).count('reading') == 1
+
+
+@pytest.mark.asyncio
+async def test_fresh_installation_can_render_and_add_first_habit(
+    user: User, tmp_path, monkeypatch, rendered_cells,
+):
+    db_path = tmp_path / 'missing' / 'data' / 'habits.db'
+    config_path = tmp_path / 'config.yaml'
+    config_path.write_text(yaml.safe_dump({
+        'database': {'db_path': str(db_path), 'db_name': 'completed_days'},
+    }), encoding='utf-8')
+    monkeypatch.setattr(gui_helper, 'DEFAULT_CONFIG_PATH', config_path)
+
+    @ui.page('/fresh-install-test')
+    def page():
+        gui.make_scroll_grid(dark=False)
+
+    await user.open('/fresh-install-test')
+    assert db_path.is_file()
+    assert_empty_grid(rendered_cells)
+
+    add_habit(user, 'reading')
+    assert habit_selector(user).value == 'reading'
+    user.find(marker='today-label').click()
+    user.find(marker='today-editor').type('0.5').trigger('keydown.enter')
+    assert get_db_all_as_dict(db_path, 'completed_days', 'reading') == {
+        date.today().isoformat(): 0.5,
+    }

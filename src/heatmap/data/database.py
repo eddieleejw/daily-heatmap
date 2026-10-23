@@ -8,6 +8,7 @@ EMPTY_HABIT_ID = "EMPTY"
 
 
 def create_db(db_path: Path, db_name: str) -> sqlite3.Connection:
+    Path(db_path).parent.mkdir(parents=True, exist_ok=True)
     con = sqlite3.connect(db_path)
     cur = con.cursor()
 

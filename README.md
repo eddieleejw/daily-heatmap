@@ -12,7 +12,7 @@ uv sync --locked
 
 
 ```
-uv run python src/heatmap/api/app.py
+uv run python -m heatmap.api.app
 ```
 
 # Docker
@@ -22,7 +22,7 @@ docker build -t heatmap .
 ```
 
 ```
-docker run --rm -p 8000:8800 heatmap
+docker run --rm -p 8000:8800 -v heatmap-data:/app/data heatmap
 ```
 
 

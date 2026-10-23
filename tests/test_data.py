@@ -118,3 +118,19 @@ def test_existing_database_habits_are_discovered(tmp_path):
     assert get_habits(db_path, 'completed_days') == ['reading']
     assert get_habits(db_path, 'completed_days') == ['reading']
     assert get_db_all_as_dict(db_path, 'completed_days', 'reading') == {'2026-10-18': 0.75}
+
+
+def test_first_use_creates_database_and_missing_parent_directories(tmp_path):
+    from heatmap.data.database import create_habit, get_habits
+
+    db_path = tmp_path / 'missing' / 'data' / 'habits.db'
+    assert not db_path.parent.exists()
+
+    assert get_habits(str(db_path), 'completed_days') == []
+    assert db_path.is_file()
+    assert get_db_all_as_dict(db_path, 'completed_days', 'reading') == {}
+
+    assert create_habit(db_path, 'completed_days', 'reading')
+    add_to_db(db_path, 'completed_days', [('2026-10-23', 0.5)], habit_id='reading')
+    assert get_habits(db_path, 'completed_days') == ['reading']
+    assert get_db_all_as_dict(db_path, 'completed_days', 'reading') == {'2026-10-23': 0.5}
