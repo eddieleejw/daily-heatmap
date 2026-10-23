@@ -20,6 +20,9 @@ def create_db(db_path: Path, db_name: str) -> sqlite3.Connection:
         )
     """)
 
+    cur.execute(f"CREATE TABLE IF NOT EXISTS {db_name}_habits (habit_id TEXT PRIMARY KEY)")
+    cur.execute(f"INSERT OR IGNORE INTO {db_name}_habits SELECT DISTINCT habit_id FROM {db_name}")
+    con.commit()
     return con
 
 def add_to_db(db_path: Path, db_name: str, data: list[tuple[str, float]], habit_id: str = EMPTY_HABIT_ID) -> None:
@@ -32,6 +35,35 @@ def add_to_db(db_path: Path, db_name: str, data: list[tuple[str, float]], habit_
     cur.executemany(f"INSERT INTO {db_name} VALUES (?, ?, ?) ON CONFLICT(date, habit_id) DO UPDATE SET value = excluded.value", [(d[0], d[1], habit_id) for d in data])
 
     con.commit()
+
+def create_habit(db_path: Path, db_name: str, habit_id: str) -> bool:
+    '''
+    Persist an empty habit; return False if its name already exists.
+    '''
+    habit_id = habit_id.strip()
+    if not habit_id:
+        raise ValueError("Habit name must not be empty.")
+    con = create_db(db_path, db_name)
+    try:
+        with con:
+            cursor = con.execute(
+                f"INSERT OR IGNORE INTO {db_name}_habits (habit_id) VALUES (?)",
+                (habit_id,),
+            )
+            return cursor.rowcount == 1
+    finally:
+        con.close()
+
+
+def get_habits(db_path: Path, db_name: str) -> list[str]:
+    con = create_db(db_path, db_name)
+    try:
+        return [row[0] for row in con.execute(
+            f"SELECT habit_id FROM {db_name}_habits ORDER BY habit_id"
+        )]
+    finally:
+        con.close()
+
 
 def get_db_all(db_path: Path, db_name: str) -> list[sqlite3.Row]:
     '''

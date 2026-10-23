@@ -4,7 +4,7 @@ from pathlib import Path
 from nicegui import ui
 
 from heatmap.config import load_config
-from heatmap.data.database import EMPTY_HABIT_ID, add_to_db, get_db_all_as_dict
+from heatmap.data.database import EMPTY_HABIT_ID, add_to_db, create_habit, get_db_all_as_dict, get_habits
 
 DEFAULT_CONFIG_PATH = Path("configs/config.yaml")
 
@@ -180,3 +180,12 @@ def change_cell_value(cell, label, editor, date: datetime, value, habit: str = E
     set_cell_green_color(cell, parsed_value)
     label.set_visibility(True)
     editor.set_visibility(False)
+
+def load_habits() -> list[str]:
+    database = load_config(DEFAULT_CONFIG_PATH)['database']
+    return get_habits(database['db_path'], database['db_name'])
+
+
+def add_habit(name: str) -> bool:
+    database = load_config(DEFAULT_CONFIG_PATH)['database']
+    return create_habit(database['db_path'], database['db_name'], name)

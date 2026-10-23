@@ -4,6 +4,8 @@ from datetime import date, timedelta
 from nicegui import ui
 
 from heatmap.api.gui_helper import (
+    add_habit,
+    load_habits,
     db_colored_cell,
     find_months,
     load_habit_data,
@@ -206,7 +208,7 @@ def get_start_end_dates_calendar() -> tuple[ui.date_input, ui.date_input]:
 
 def make_scroll_grid(habits: list[str] | None = None):
     if habits is None:
-        habits = [EMPTY_HABIT_ID]
+        habits = load_habits() or [EMPTY_HABIT_ID]
     if not habits:
         raise ValueError("At least one habit is required.")
 
@@ -219,7 +221,32 @@ def make_scroll_grid(habits: list[str] | None = None):
         selected_habit = e.value
         click_draw_grid(start_dates, end_dates, selected_habit)
 
-    ui.select(habits, value=selected_habit, with_input=True, on_change=select_habit).mark("habit-selector")
+    def submit_habit():
+        name = (name_input.value or '').strip()
+        if not name:
+            ui.notify('Enter a habit name.')
+            return
+        if name in habit_selector.options or not add_habit(name):
+            ui.notify('That habit already exists.')
+            return
+        habit_selector.set_options([*habit_selector.options, name])
+        habit_selector.set_value(name)
+        dialog.close()
+        name_input.set_value('')
+
+    def open_habit_dialog():
+        name_input.set_value('')
+        dialog.open()
+
+    with ui.dialog() as dialog, ui.card():
+        name_input = ui.input('Habit name').mark('new-habit-name')
+        name_input.on('keydown.enter', submit_habit)
+
+    with ui.row().classes('items-center'):
+        habit_selector = ui.select(
+            list(habits), value=selected_habit, with_input=True, on_change=select_habit,
+        ).mark('habit-selector')
+        ui.button('Add new habit', on_click=open_habit_dialog)
     grid_container = ui.column() 
 
     def click_draw_grid(start_dates: ui.date_input, end_dates: ui.date_input, habit: str = EMPTY_HABIT_ID):

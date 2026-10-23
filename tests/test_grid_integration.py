@@ -86,6 +86,7 @@ async def test_default_date_range_on_load(user: User, monkeypatch):
 
     monkeypatch.setattr(gui, "date", FixedDate)
     monkeypatch.setattr(gui, "load_habit_data", dict)
+    monkeypatch.setattr(gui, "load_habits", lambda: [gui_helper.EMPTY_HABIT_ID])
 
     rendered_dates = []
     original_db_colored_cell = gui.db_colored_cell

@@ -1,5 +1,6 @@
 from datetime import datetime
 
+import pytest
 import yaml
 
 from heatmap.api import gui_helper
@@ -90,3 +91,29 @@ def test_load_data_for_selected_habit(tmp_path):
     assert get_db_all_as_dict(
         db_path, table_name, habit_id="exercise"
     ) == {"2026-10-18": 0.75}
+
+def test_empty_habit_persists_and_rejects_duplicates(tmp_path):
+    from heatmap.data.database import create_habit, get_habits
+
+    db_path = tmp_path / 'habits.db'
+    assert create_habit(db_path, 'completed_days', ' exercise ')
+    assert not create_habit(db_path, 'completed_days', 'exercise')
+    assert get_habits(db_path, 'completed_days') == ['exercise']
+    assert get_db_all_as_dict(db_path, 'completed_days', 'exercise') == {}
+    with pytest.raises(ValueError, match='must not be empty'):
+        create_habit(db_path, 'completed_days', '   ')
+
+
+def test_existing_database_habits_are_discovered(tmp_path):
+    import sqlite3
+    from heatmap.data.database import get_habits
+
+    db_path = tmp_path / 'legacy.db'
+    with sqlite3.connect(db_path) as con:
+        con.execute('CREATE TABLE completed_days '
+                    '(date TEXT, value REAL, habit_id TEXT, PRIMARY KEY (date, habit_id))')
+        con.execute('INSERT INTO completed_days VALUES (?, ?, ?)',
+                    ('2026-10-18', 0.75, 'reading'))
+    assert get_habits(db_path, 'completed_days') == ['reading']
+    assert get_habits(db_path, 'completed_days') == ['reading']
+    assert get_db_all_as_dict(db_path, 'completed_days', 'reading') == {'2026-10-18': 0.75}
