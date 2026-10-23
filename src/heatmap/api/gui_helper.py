@@ -4,7 +4,13 @@ from pathlib import Path
 from nicegui import ui
 
 from heatmap.config import load_config
-from heatmap.data.database import EMPTY_HABIT_ID, add_to_db, create_habit, get_db_all_as_dict, get_habits
+from heatmap.data.database import (
+    EMPTY_HABIT_ID,
+    add_to_db,
+    create_habit,
+    get_db_all_as_dict,
+    get_habits,
+)
 
 DEFAULT_CONFIG_PATH = Path("configs/config.yaml")
 

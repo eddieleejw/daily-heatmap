@@ -5,10 +5,10 @@ from nicegui import ui
 
 from heatmap.api.gui_helper import (
     add_habit,
-    load_habits,
     db_colored_cell,
     find_months,
     load_habit_data,
+    load_habits,
     process_weeks,
 )
 from heatmap.data.database import EMPTY_HABIT_ID

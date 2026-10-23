@@ -106,6 +106,7 @@ def test_empty_habit_persists_and_rejects_duplicates(tmp_path):
 
 def test_existing_database_habits_are_discovered(tmp_path):
     import sqlite3
+
     from heatmap.data.database import get_habits
 
     db_path = tmp_path / 'legacy.db'
