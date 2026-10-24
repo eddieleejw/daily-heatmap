@@ -1,16 +1,18 @@
 # Daily heatmap
 
-A self-hosted habit tracker built with Python, NiceGUI, and SQLite. Track daily progress in a GitHub-style heatmap.
+A self-hosted minimal habit tracker built with Python, NiceGUI, and SQLite. Track daily progress in a GitHub-style heatmap.
 
 <img src="images/screenshot.PNG" width="100%">
 
 - Create habits and switch between their heatmaps
-- Choose a date range with calendar inputs
+- Choose a date range with calendar inputs (defaults to the last 180 days from current today)
 - Click a day to enter a value between 0 and 1, then press Enter to save
 - Toggle dark mode and collapse the controls
 - Store habit data locally in SQLite
 
-## Run locally
+## Installation
+
+### Method 1: Install locally
 
 Requires Python 3.12 or later and [uv](https://docs.astral.sh/uv/). Run these commands from the repository root:
 
@@ -21,7 +23,7 @@ uv run python -m heatmap.api.app
 
 Open [localhost:8800/prototype-scroll](http://localhost:8800/prototype-scroll) to use the tracker.
 
-## Run with Docker
+### Method 2: Install with Docker
 
 The Docker build requires `uv.lock`. If missing, generate it with `uv lock` first.
 
