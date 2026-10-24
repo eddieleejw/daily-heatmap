@@ -80,7 +80,7 @@ def get_db_all(db_path: Path, db_name: str) -> list[sqlite3.Row]:
 
     return cur.fetchall()
 
-def create_test_db(db_path: Path, db_name: str, start_date: date = date(2026,1,1), end_date: date = date(2026,12,31)):
+def create_test_db(db_path: Path, db_name: str, start_date: date = date(2026,1,1), end_date: date = date(2026,12,31), habit_id: str = EMPTY_HABIT_ID):
     import random
 
     days = list_dates(start_date, end_date)
@@ -90,7 +90,8 @@ def create_test_db(db_path: Path, db_name: str, start_date: date = date(2026,1,1
         db_name,
         [
             (day.strftime("%Y-%m-%d"), random.random()) for day in days
-        ]
+        ],
+        habit_id=habit_id
     )
 
 def get_db_all_as_dict(db_path: Path, db_name: str, habit_id:str = EMPTY_HABIT_ID) -> dict[str, int | float]:
@@ -107,7 +108,8 @@ def get_db_all_as_dict(db_path: Path, db_name: str, habit_id:str = EMPTY_HABIT_I
 if __name__ == "__main__":
     db_path = Path("data/test.db")
     db_name = "completed_days"
+    habit_id = "Reading"
 
-    create_test_db(db_path, db_name)
+    create_test_db(db_path, db_name, habit_id=habit_id)
 
     print(get_db_all_as_dict(db_path, db_name))
