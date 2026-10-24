@@ -2,7 +2,7 @@
 
 A self-hosted habit tracker built with Python, NiceGUI, and SQLite. Track daily progress in a GitHub-style heatmap.
 
-<img src="images/screenshot.PNG" width="50%">
+<img src="images/screenshot.PNG" width="100%">
 
 - Create habits and switch between their heatmaps
 - Choose a date range with calendar inputs
